@@ -1,21 +1,15 @@
-# 빌드 단계
-FROM openjdk:17-alpine AS builder
-# FROM openjdk:17-jdk-slim AS builder
-# FROM gradle:7.3.3-jdk17 AS builder
-WORKDIR /app
+# Use the official OpenJDK slim image as a base image
+FROM openjdk:17-slim
 
-# Gradle 프로젝트 소스 복사
-COPY . .
+# Install required tools including apt-get
+USER root
+RUN apt-get update && apt-get install -y default-mysql-client
 
-# 프로젝트 빌드
-RUN ./gradlew build -x test --no-daemon
+# Set the argument for the JAR file location
+ARG JAR_FILE=build/libs/docker-set-0.0.1-SNAPSHOT.jar
 
-# 실행 단계
-FROM openjdk:17-jdk-slim
-WORKDIR /app
+# Copy the JAR file to the container
+COPY ${JAR_FILE} app.jar
 
-# 빌드 단계에서 생성된 JAR 파일 복사
-COPY --from=builder /app/build/libs/*.jar app.jar
-
-# 애플리케이션 실행
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the JAR file
+ENTRYPOINT ["java", "-jar", "/app.jar"]
